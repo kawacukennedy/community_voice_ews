@@ -1,0 +1,216 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+  <meta name="description" content="Community Voice Early Warning System - Real-time disaster alerts and community reports for the IGAD region">
+  <meta name="theme-color" content="#FF6B00">
+  <title>Community Voice EWS</title>
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+  <link rel="stylesheet" href="https://unpkg.com/leaflet.markercluster@1.5.3/dist/MarkerCluster.css" />
+  <link rel="stylesheet" href="https://unpkg.com/leaflet.markercluster@1.5.3/dist/MarkerCluster.Default.css" />
+  <link rel="stylesheet" href="css/style.css" />
+  <style>
+    .leaflet-popup-content-wrapper {
+      border-radius: 12px;
+      font-family: -apple-system, 'SF Pro Text', sans-serif;
+    }
+    .leaflet-popup-content {
+      margin: 12px 16px;
+      font-size: 13px;
+    }
+    .leaflet-popup-tip {
+      box-shadow: none;
+    }
+  </style>
+</head>
+<body>
+
+  <!-- HEADER -->
+  <header class="header" role="banner">
+    <a href="/" class="header-logo">
+      <div class="header-logo-icon">CV</div>
+      <div>
+        <div class="header-title">Community Voice EWS</div>
+        <div class="header-subtitle">IGAD Early Warning System</div>
+      </div>
+    </a>
+    <div class="header-actions">
+      <button class="btn btn-secondary btn-sm" onclick="locateMe()" title="Find my location">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><circle cx="12" cy="12" r="3"/><line x1="12" y1="2" x2="12" y2="6"/><line x1="12" y1="18" x2="12" y2="22"/><line x1="2" y1="12" x2="6" y2="12"/><line x1="18" y1="12" x2="22" y2="12"/></svg>
+      </button>
+      <button class="btn btn-primary btn-sm" onclick="openReportModal()">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+        Report
+      </button>
+      <button class="btn btn-ghost btn-icon sms-demo-btn" onclick="openSMSDemo()" title="Simulate SMS" style="background:linear-gradient(135deg,#34C759,#28A745);color:white;font-size:16px;width:36px;height:36px;padding:0;border-radius:50%;">S</button>
+    </div>
+  </header>
+
+  <!-- APP CONTAINER -->
+  <div class="app-container">
+    <div class="main-content">
+
+      <!-- MAP PANEL -->
+      <div class="map-panel">
+        <div id="map"></div>
+        <div class="map-controls">
+        </div>
+        <div class="map-legend" id="mapLegend">
+          <div class="map-legend-item"><span class="map-legend-dot" style="background:#007AFF"></span> Flood</div>
+          <div class="map-legend-item"><span class="map-legend-dot" style="background:#FF6B00"></span> Drought</div>
+          <div class="map-legend-item"><span class="map-legend-dot" style="background:#AF52DE"></span> Pest</div>
+          <div class="map-legend-item"><span class="map-legend-dot" style="background:#FF3B30"></span> Disease</div>
+          <div class="map-legend-item"><span class="map-legend-dot" style="background:#FF4500"></span> Fire</div>
+        </div>
+      </div>
+
+      <!-- SIDEBAR -->
+      <div class="sidebar" role="complementary">
+        <div class="sidebar-handle"></div>
+
+        <!-- Stats Bar -->
+        <div class="stats-bar" id="statsBar">
+          <div class="stat-item">
+            <div class="stat-value" id="statReports">0</div>
+            <div class="stat-label">Reports</div>
+          </div>
+          <div class="stat-item">
+            <div class="stat-value" id="statAlerts">0</div>
+            <div class="stat-label">Active Alerts</div>
+          </div>
+          <div class="stat-item">
+            <div class="stat-value" id="statCommunities">0</div>
+            <div class="stat-label">Communities</div>
+          </div>
+          <div class="stat-item">
+            <div class="stat-value" id="statCritical">0</div>
+            <div class="stat-label">Critical</div>
+          </div>
+        </div>
+
+        <!-- Tabs -->
+        <div class="sidebar-tabs" role="tablist">
+          <button class="sidebar-tab active" data-tab="reports" role="tab" aria-selected="true">Reports</button>
+          <button class="sidebar-tab" data-tab="alerts" role="tab" aria-selected="false">Alerts</button>
+          <button class="sidebar-tab" data-tab="communities" role="tab" aria-selected="false">Communities</button>
+        </div>
+
+        <!-- Filter Chips -->
+        <div class="filter-bar" id="filterBar">
+          <button class="filter-chip active" data-filter="all">All</button>
+          <button class="filter-chip" data-filter="flood">Flood</button>
+          <button class="filter-chip" data-filter="drought">Drought</button>
+          <button class="filter-chip" data-filter="pest">Pest</button>
+          <button class="filter-chip" data-filter="disease">Disease</button>
+          <button class="filter-chip" data-filter="fire">Fire</button>
+          <button class="filter-chip" data-filter="conflict">Conflict</button>
+          <button class="filter-chip" data-filter="health">Health</button>
+        </div>
+
+        <!-- Content -->
+        <div class="sidebar-content" id="sidebarContent" role="tabpanel">
+          <div class="empty-state">
+            <div class="empty-state-icon">📡</div>
+            <div class="empty-state-title">Waiting for Reports</div>
+            <div class="empty-state-text">Reports from communities will appear here in real-time</div>
+            <div class="loading-spinner" style="margin-top:16px"></div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- REPORT MODAL -->
+  <div class="modal-overlay" id="reportModal">
+    <div class="modal" role="dialog" aria-labelledby="modalTitle">
+      <div class="modal-header">
+        <h2 class="modal-title" id="modalTitle">Submit a Report</h2>
+        <button class="modal-close" onclick="closeModal('reportModal')" aria-label="Close">&times;</button>
+      </div>
+      <div class="modal-body">
+        <div class="form-group">
+          <label class="form-label" for="reportMessage">What did you observe?</label>
+          <textarea class="form-textarea" id="reportMessage" placeholder="Describe what you are seeing... (e.g., 'Heavy rain causing flooding near the river')" maxlength="1600" rows="4" required></textarea>
+          <div class="form-hint"><span id="charCount">0</span>/1600 characters</div>
+        </div>
+        <div class="form-row">
+          <div class="form-group">
+            <label class="form-label" for="reportLatitude">Latitude</label>
+            <input class="form-input" type="number" id="reportLatitude" step="any" placeholder="-1.2833">
+          </div>
+          <div class="form-group">
+            <label class="form-label" for="reportLongitude">Longitude</label>
+            <input class="form-input" type="number" id="reportLongitude" step="any" placeholder="36.8167">
+          </div>
+        </div>
+        <div class="form-group">
+          <label class="form-label" for="reportLocation">Location Name</label>
+          <input class="form-input" type="text" id="reportLocation" placeholder="e.g., Nairobi, Kenya">
+        </div>
+        <div class="form-group">
+          <label class="form-label" for="reportPhone">Phone Number (optional)</label>
+          <input class="form-input" type="tel" id="reportPhone" placeholder="+2547XXXXXXXX">
+        </div>
+        <div class="form-group" id="reportPreview" style="display:none">
+          <label class="form-label">NLP Classification Preview</label>
+          <div style="background:var(--color-bg);border-radius:8px;padding:12px;font-size:13px">
+            <div id="previewType"></div>
+            <div id="previewSeverity"></div>
+            <div id="previewConfidence"></div>
+          </div>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button class="btn btn-secondary" onclick="closeModal('reportModal')">Cancel</button>
+        <button class="btn btn-primary" onclick="submitReport()" id="submitBtn">Submit Report</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- SMS DEMO MODAL -->
+  <div class="modal-overlay" id="smsDemoModal">
+    <div class="modal" role="dialog" aria-labelledby="smsModalTitle">
+      <div class="modal-header">
+        <h2 class="modal-title" id="smsModalTitle">Simulate SMS Report</h2>
+        <button class="modal-close" onclick="closeModal('smsDemoModal')" aria-label="Close">&times;</button>
+      </div>
+      <div class="modal-body">
+        <p style="font-size:14px;color:var(--color-text-secondary);margin-bottom:16px">
+          This simulates what happens when a community member sends an SMS to the system. No phone required.
+        </p>
+        <div class="form-group">
+          <label class="form-label" for="smsNumber">From (Phone Number)</label>
+          <input class="form-input" type="tel" id="smsNumber" value="+254712345678" placeholder="+2547XXXXXXXX">
+        </div>
+        <div class="form-group">
+          <label class="form-label" for="smsMessage">SMS Message</label>
+          <textarea class="form-textarea" id="smsMessage" placeholder="Type an SMS message as if from a community member..." rows="4"></textarea>
+        </div>
+        <div style="display:flex;flex-wrap:wrap;gap:6px;margin-bottom:12px">
+          <button class="btn btn-sm btn-secondary" onclick="fillSMSTemplate('flood')">🌊 Flood</button>
+          <button class="btn btn-sm btn-secondary" onclick="fillSMSTemplate('drought')">☀️ Drought</button>
+          <button class="btn btn-sm btn-secondary" onclick="fillSMSTemplate('pest')">🐛 Pest</button>
+          <button class="btn btn-sm btn-secondary" onclick="fillSMSTemplate('disease')">🤒 Disease</button>
+          <button class="btn btn-sm btn-secondary" onclick="fillSMSTemplate('fire')">🔥 Fire</button>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button class="btn btn-secondary" onclick="closeModal('smsDemoModal')">Cancel</button>
+        <button class="btn btn-primary" onclick="sendSMSDemo()" id="smsSendBtn">Send SMS</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- NOTIFICATION CONTAINER -->
+  <div class="notification-container" id="notifications" role="alert" aria-live="polite"></div>
+
+  <!-- SCRIPTS -->
+  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+  <script src="https://unpkg.com/leaflet.markercluster@1.5.3/dist/leaflet.markercluster.js"></script>
+  <script src="js/api.js"></script>
+  <script src="js/map.js"></script>
+  <script src="js/app.js"></script>
+  <script src="js/sms-demo.js"></script>
+</body>
+</html>

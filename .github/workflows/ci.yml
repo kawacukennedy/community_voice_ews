@@ -1,0 +1,87 @@
+name: CI
+
+on:
+  pull_request:
+    branches: [main, develop]
+  push:
+    branches: [develop]
+
+env:
+  PYTHON_VERSION: "3.12"
+
+jobs:
+  lint:
+    name: Code Quality
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: backend
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: ${{ env.PYTHON_VERSION }}
+
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install flake8 black
+          pip install -r requirements.txt
+
+      - name: Lint with flake8
+        run: flake8 app/ --max-line-length=120 --count --statistics
+
+      - name: Check formatting with black
+        run: black --check app/ --line-length=120
+
+  test:
+    name: Run Tests
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: backend
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: ${{ env.PYTHON_VERSION }}
+
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt
+          pip install pytest pytest-asyncio httpx
+
+      - name: Run tests
+        run: python -m pytest tests/ -v
+
+  validate-frontend:
+    name: Validate Frontend
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Check HTML validity
+        run: |
+          pip install html5lib
+          python -c "
+          import html5lib
+          with open('frontend/index.html') as f:
+              doc = html5lib.parse(f.read())
+              print('HTML parsed successfully')
+          "
+
+      - name: Check JS syntax
+        run: |
+          sudo apt-get update && sudo apt-get install -y nodejs
+          node --check frontend/js/api.js
+          node --check frontend/js/app.js
+          node --check frontend/js/map.js
+          node --check frontend/js/sms-demo.js
