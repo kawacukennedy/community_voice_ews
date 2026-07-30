@@ -1,4 +1,4 @@
-from pydantic import BaseModel, Field, field_validator
+from pydantic import BaseModel, Field, field_validator, ConfigDict
 from typing import Optional, List
 from datetime import datetime
 from uuid import UUID
@@ -42,8 +42,7 @@ class CommunityResponse(BaseModel):
     is_active: bool
     created_at: datetime
 
-    class Config:
-        from_attributes = True
+    model_config = ConfigDict(from_attributes=True)
 
 
 class ReportCreate(BaseModel):
@@ -87,8 +86,7 @@ class ReportResponse(BaseModel):
     submitted_at: datetime
     created_at: datetime
 
-    class Config:
-        from_attributes = True
+    model_config = ConfigDict(from_attributes=True)
 
 
 class AlertCreate(BaseModel):
@@ -136,8 +134,7 @@ class AlertResponse(BaseModel):
     expires_at: Optional[datetime]
     created_at: datetime
 
-    class Config:
-        from_attributes = True
+    model_config = ConfigDict(from_attributes=True)
 
 
 class SMSWebhookPayload(BaseModel):
@@ -147,8 +144,7 @@ class SMSWebhookPayload(BaseModel):
     id: Optional[str] = None
     linkId: Optional[str] = None
 
-    class Config:
-        populate_by_name = True
+    model_config = ConfigDict(populate_by_name=True)
 
 
 class SMSWebhookResponse(BaseModel):

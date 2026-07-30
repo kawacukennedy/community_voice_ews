@@ -51,6 +51,8 @@ def classify_message(text: str) -> dict:
         category_score = 0.0
         category_severity = 0
         category_keywords = []
+        weight = 1
+        severity_boost = 1
 
         for entry in config:
             if isinstance(entry, dict) and "weight" in entry:

@@ -1,11 +1,5 @@
 const API = (() => {
-  const BASE_URL = (() => {
-    if (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1') {
-      return 'http://localhost:8000';
-    }
-    return 'https://community-voice-ews-api.onrender.com';
-
-  })();
+  const BASE_URL = '';
 
   const MAX_RETRIES = 2;
   const RETRY_DELAY = 1000;
@@ -90,6 +84,6 @@ const API = (() => {
 
     healthCheck: () => request('/api/health'),
 
-    getBaseUrl: () => BASE_URL,
+    getBaseUrl: () => BASE_URL || window.location.origin,
   };
 })();

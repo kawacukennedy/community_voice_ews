@@ -1,16 +1,19 @@
 import uuid
 import logging
-from datetime import datetime, timezone, timedelta
+import os
+from datetime import datetime, timezone
 from contextlib import asynccontextmanager
 from typing import Optional
+from pathlib import Path
 
 from fastapi import FastAPI, HTTPException, Depends, Query, Request, status
 from fastapi.middleware.cors import CORSMiddleware
-from fastapi.responses import JSONResponse
+from fastapi.staticfiles import StaticFiles
+from fastapi.responses import JSONResponse, FileResponse
 from sqlalchemy import create_engine, text
 from sqlalchemy.orm import sessionmaker, Session
 
-from app.models import Base, Community, Report, Alert, ReportType, Severity, AlertStatus
+from app.models import Base, Community, Report, Alert
 from app.schemas import (
     CommunityCreate, CommunityResponse,
     ReportCreate, ReportResponse,
@@ -19,7 +22,7 @@ from app.schemas import (
     StatsResponse, ClassificationResult,
 )
 from app.services.nlp import classify_message
-from app.services.sms import send_sms, broadcast_alert, format_alert_sms
+from app.services.sms import send_sms, broadcast_alert
 from app.services.icpac import get_icpac_alerts
 from app.utils.config import get_settings
 
@@ -34,11 +37,26 @@ logger = logging.getLogger(__name__)
 engine = None
 SessionLocal = None
 
+if settings.database_url and settings.database_url.startswith("sqlite"):
+    try:
+        init_engine = create_engine(
+            settings.database_url,
+            connect_args={"check_same_thread": False},
+        )
+        Base.metadata.create_all(init_engine)
+        init_engine.dispose()
+        logger.info("Database tables created at %s", settings.database_url)
+    except Exception as e:
+        logger.warning("Could not initialize database at startup: %s", e)
+
 
 def get_db_engine():
     global engine
     if engine is None and settings.database_url:
-        engine = create_engine(settings.database_url, pool_pre_ping=True, pool_size=5)
+        connect_args = {}
+        if settings.database_url.startswith("sqlite"):
+            connect_args["check_same_thread"] = False
+        engine = create_engine(settings.database_url, connect_args=connect_args, pool_pre_ping=True)
     return engine
 
 
@@ -76,7 +94,7 @@ async def lifespan(app: FastAPI):
             engine = get_db_engine()
             if engine:
                 Base.metadata.create_all(engine)
-                logger.info("Database tables verified")
+                logger.info("Database tables created/verified at %s", settings.database_url)
         except Exception as e:
             logger.warning("Could not initialize database: %s", e)
     else:
@@ -93,10 +111,9 @@ app = FastAPI(
     redoc_url="/redoc",
 )
 
-allowed = [o.strip() for o in settings.allowed_origins.split(",") if o.strip()]
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=allowed,
+    allow_origins=["*"],
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
@@ -140,17 +157,10 @@ def _to_dict(obj):
     d = {}
     for col in obj.__table__.columns:
         val = getattr(obj, col.name)
-        if isinstance(val, enum.Enum):
-            val = val.value
-        elif isinstance(val, uuid.UUID):
-            val = str(val)
-        elif isinstance(val, datetime):
+        if isinstance(val, datetime):
             val = val.isoformat()
         d[col.name] = val
     return d
-
-
-import enum
 
 
 @app.get("/api/health")
@@ -184,24 +194,23 @@ async def create_report(payload: ReportCreate, db: Session = Depends(get_db)):
             "nlp_raw": str(classification),
         }
 
+        community = None
         if db:
-            community = None
             if payload.community_id:
-                community = db.query(Community).filter(Community.id == payload.community_id).first()
+                community = db.query(Community).filter(Community.id == str(payload.community_id)).first()
             elif payload.phone_number:
                 community = db.query(Community).filter(Community.phone == payload.phone_number).first()
 
             report = Report(
-                community_id=community.id if community else payload.community_id,
-                **{k: v for k, v in report_data.items() if k != "community_id"},
+                community_id=str(community.id) if community else None,
+                **report_data,
             )
             db.add(report)
             db.commit()
             db.refresh(report)
             result = _to_dict(report)
         else:
-            if payload.community_id:
-                report_data["community_id"] = str(payload.community_id)
+            report_data["community_id"] = str(payload.community_id) if payload.community_id else None
             result = memory_db.add_report(report_data)
 
         logger.info("Report created: %s type=%s severity=%s confidence=%.2f",
@@ -221,14 +230,12 @@ async def create_report(payload: ReportCreate, db: Session = Depends(get_db)):
                     "status": "active",
                     "sent_via_sms": False,
                 }
-
                 if db:
                     alert = Alert(**alert_data)
                     db.add(alert)
                     db.commit()
                 else:
                     memory_db.add_alert(alert_data)
-
                 logger.info("Auto-alert created for high-severity report %s", result.get("id"))
             except Exception as e:
                 logger.error("Failed to create auto-alert: %s", e)
@@ -272,7 +279,7 @@ async def get_reports(
                 results = [r for r in results if r["severity"] == severity]
             if status:
                 results = [r for r in results if r["status"] == status]
-            if region and "location_name" in results[0]:
+            if region and results:
                 results = [r for r in results if r.get("location_name") and region.lower() in r["location_name"].lower()]
             results.sort(key=lambda r: r["submitted_at"], reverse=True)
             return results[offset:offset + limit]
@@ -385,7 +392,6 @@ async def sms_webhook(payload: SMSWebhookPayload, request: Request):
         raw_body = await request.body()
         logger.info("SMS webhook received from %s: %s", payload.from_number, payload.text[:100])
 
-        form_data = None
         content_type = request.headers.get("content-type", "")
         if "application/x-www-form-urlencoded" in content_type:
             form_data = await request.form()
@@ -409,13 +415,14 @@ async def sms_webhook(payload: SMSWebhookPayload, request: Request):
         }
 
         db = get_session()
+        report_id = None
         if db:
             community = db.query(Community).filter(Community.phone == payload.from_number).first()
-            report = Report(community_id=community.id if community else None, **{k: v for k, v in report_data.items() if k != "community_id"})
+            report = Report(community_id=str(community.id) if community else None, **report_data)
             db.add(report)
             db.commit()
             db.refresh(report)
-            report_id = str(report.id)
+            report_id = report.id
             db.close()
         else:
             result = memory_db.add_report(report_data)
@@ -429,7 +436,7 @@ async def sms_webhook(payload: SMSWebhookPayload, request: Request):
         return SMSWebhookResponse(
             status="success",
             message="Report processed successfully",
-            report_id=uuid.UUID(report_id) if isinstance(report_id, str) else report_id,
+            report_id=report_id,
         )
     except Exception as e:
         logger.error("Error processing SMS webhook: %s", e, exc_info=True)
@@ -443,12 +450,12 @@ async def sms_webhook(payload: SMSWebhookPayload, request: Request):
 async def get_stats(db: Session = Depends(get_db)):
     try:
         if db:
+            from sqlalchemy import func
+
             total_reports = db.query(Report).count()
             total_alerts = db.query(Alert).count()
             total_communities = db.query(Community).count()
             active_alerts = db.query(Alert).filter(Alert.status == "active").count()
-
-            from sqlalchemy import func
 
             reports_by_type_rows = db.query(Report.report_type, func.count(Report.id)).group_by(Report.report_type).all()
             reports_by_severity_rows = db.query(Report.severity, func.count(Report.id)).group_by(Report.severity).all()
@@ -507,7 +514,6 @@ async def create_community(payload: CommunityCreate, db: Session = Depends(get_d
             existing = db.query(Community).filter(Community.phone == payload.phone).first()
             if existing:
                 raise HTTPException(status_code=409, detail="Community with this phone already exists")
-
             community = Community(**payload.model_dump())
             db.add(community)
             db.commit()
@@ -547,7 +553,7 @@ async def sync_icpac(db: Session = Depends(get_db)):
                 existing = db.query(Alert).filter(
                     Alert.title == item["title"],
                     Alert.region == item["region"],
-                    Alert.status == "active"
+                    Alert.status == "active",
                 ).first()
                 if existing:
                     continue
@@ -574,3 +580,23 @@ async def sync_icpac(db: Session = Depends(get_db)):
     except Exception as e:
         logger.error("Error syncing ICPAC: %s", e)
         raise HTTPException(status_code=500, detail="Failed to sync ICPAC data")
+
+
+FRONTEND_DIR = Path(__file__).resolve().parent.parent.parent / "frontend"
+if FRONTEND_DIR.exists() and (FRONTEND_DIR / "index.html").exists():
+    @app.get("/")
+    async def serve_frontend():
+        return FileResponse(str(FRONTEND_DIR / "index.html"))
+
+    @app.get("/{full_path:path}")
+    async def serve_frontend_spa(full_path: str):
+        if full_path.startswith("api/") or full_path in ("docs", "redoc", "openapi.json"):
+            raise HTTPException(status_code=404, detail="Not found")
+        fp = FRONTEND_DIR / full_path
+        if fp.exists() and fp.is_file():
+            return FileResponse(str(fp))
+        return FileResponse(str(FRONTEND_DIR / "index.html"))
+
+    logger.info("Serving frontend from %s", FRONTEND_DIR)
+else:
+    logger.warning("Frontend not found at %s", FRONTEND_DIR)

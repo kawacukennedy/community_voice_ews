@@ -1,20 +1,19 @@
 import os
-from pydantic_settings import BaseSettings
+from pydantic_settings import BaseSettings, SettingsConfigDict
 from functools import lru_cache
 
 
 class Settings(BaseSettings):
+    model_config = SettingsConfigDict(env_file=".env", env_file_encoding="utf-8")
+
     app_name: str = "Community Voice EWS"
     app_version: str = "1.0.0"
     debug: bool = False
 
-    database_url: str = ""
-    supabase_url: str = ""
-    supabase_key: str = ""
-    supabase_jwt_secret: str = ""
+    database_url: str = "sqlite:///./ews.db"
 
     secret_key: str = "change-me-in-production"
-    allowed_origins: str = "http://localhost:8000,http://localhost:5500,https://*.vercel.app"
+    allowed_origins: str = "*"
 
     sms_provider: str = "africas_talking"
     sms_api_key: str = ""
@@ -28,12 +27,7 @@ class Settings(BaseSettings):
     icpac_api_base: str = "https://maps.icpac.net/ogc"
     icpac_api_key: str = ""
 
-    mapbox_token: str = ""
     log_level: str = "INFO"
-
-    class Config:
-        env_file = ".env"
-        env_file_encoding = "utf-8"
 
 
 @lru_cache()

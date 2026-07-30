@@ -76,7 +76,7 @@ class TestReports:
 
     def test_get_report_not_found(self):
         resp = client.get("/api/reports/nonexistent-id-here")
-        assert resp.status_code == 500
+        assert resp.status_code == 404
 
 
 class TestAlerts:
