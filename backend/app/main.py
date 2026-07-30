@@ -292,7 +292,7 @@ async def get_reports(
                     r for r in results if r.get("location_name") and region.lower() in r["location_name"].lower()
                 ]
             results.sort(key=lambda r: r["submitted_at"], reverse=True)
-            return results[offset:offset + limit]
+            return results[offset : offset + limit]
     except Exception as e:
         logger.error("Error fetching reports: %s", e)
         raise HTTPException(status_code=500, detail="Failed to fetch reports")
