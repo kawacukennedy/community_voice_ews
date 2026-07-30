@@ -28,6 +28,7 @@ from app.services.nlp import classify_message
 from app.services.sms import send_sms, broadcast_alert
 from app.services.icpac import get_icpac_alerts
 from app.utils.config import get_settings
+from app.utils.seed import seed_db
 
 settings = get_settings()
 
@@ -98,6 +99,12 @@ async def lifespan(app: FastAPI):
             if engine:
                 Base.metadata.create_all(engine)
                 logger.info("Database tables created/verified at %s", settings.database_url)
+                session = get_session()
+                if session:
+                    try:
+                        seed_db(session)
+                    finally:
+                        session.close()
         except Exception as e:
             logger.warning("Could not initialize database: %s", e)
     else:
