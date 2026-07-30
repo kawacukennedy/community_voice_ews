@@ -405,7 +405,7 @@ body {
   background: var(--color-white);
   font-size: 12px;
   font-weight: 500;
-  color: var(--color-text-secondary);
+  color: var(--color-text-primary);
   cursor: pointer;
   transition: all var(--transition);
   font-family: var(--font);
@@ -905,7 +905,7 @@ body {
   .filter-chip {
     background: var(--color-white);
     border-color: rgba(255, 255, 255, 0.08);
-    color: var(--color-text-secondary);
+    color: var(--color-text-primary);
   }
 
   .modal {
