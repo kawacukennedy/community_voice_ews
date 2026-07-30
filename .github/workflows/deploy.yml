@@ -57,22 +57,4 @@ jobs:
             -d '{}' \
             https://api.render.com/deploy/srv-${{ secrets.RENDER_SERVICE_ID }}?key=${{ secrets.RENDER_DEPLOY_KEY }}
 
-  deploy-frontend:
-    name: Deploy Frontend to Vercel
-    needs: test-backend
-    runs-on: ubuntu-latest
-    if: github.ref == 'refs/heads/main'
 
-    steps:
-      - uses: actions/checkout@v4
-
-      - name: Install Vercel CLI
-        run: npm install -g vercel
-
-      - name: Deploy to Vercel
-        run: |
-          vercel --token ${{ secrets.VERCEL_TOKEN }} \
-            --prod \
-            --cwd frontend/ \
-            --confirm \
-            --yes
