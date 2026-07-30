@@ -40,21 +40,6 @@ jobs:
           pip install pytest pytest-asyncio
           python -m pytest tests/ -v --timeout=30 || echo "Tests completed with warnings"
 
-  deploy-backend:
-    name: Deploy Backend to Render
-    needs: test-backend
-    runs-on: ubuntu-latest
-    if: github.ref == 'refs/heads/main'
 
-    steps:
-      - uses: actions/checkout@v4
-
-      - name: Trigger Render Deploy
-        run: |
-          curl -X POST \
-            -H "Authorization: Bearer ${{ secrets.RENDER_API_KEY }}" \
-            -H "Content-Type: application/json" \
-            -d '{}' \
-            https://api.render.com/deploy/srv-${{ secrets.RENDER_SERVICE_ID }}?key=${{ secrets.RENDER_DEPLOY_KEY }}
 
 
