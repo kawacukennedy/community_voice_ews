@@ -6,6 +6,7 @@ services:
     plan: free
     pythonVersion: 3.12
     buildCommand: |
+      export CARGO_HOME=/tmp/cargo
       pip install -r backend/requirements.txt
     startCommand: |
       ./start.sh
