@@ -1,6 +1,5 @@
 import uuid
 import logging
-import os
 from datetime import datetime, timezone
 from contextlib import asynccontextmanager
 from typing import Optional
@@ -8,18 +7,22 @@ from pathlib import Path
 
 from fastapi import FastAPI, HTTPException, Depends, Query, Request, status
 from fastapi.middleware.cors import CORSMiddleware
-from fastapi.staticfiles import StaticFiles
-from fastapi.responses import JSONResponse, FileResponse
-from sqlalchemy import create_engine, text
+from fastapi.responses import FileResponse
+from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker, Session
 
 from app.models import Base, Community, Report, Alert
 from app.schemas import (
-    CommunityCreate, CommunityResponse,
-    ReportCreate, ReportResponse,
-    AlertCreate, AlertResponse,
-    SMSWebhookPayload, SMSWebhookResponse,
-    StatsResponse, ClassificationResult,
+    CommunityCreate,
+    CommunityResponse,
+    ReportCreate,
+    ReportResponse,
+    AlertCreate,
+    AlertResponse,
+    SMSWebhookPayload,
+    SMSWebhookResponse,
+    StatsResponse,
+    ClassificationResult,
 )
 from app.services.nlp import classify_message
 from app.services.sms import send_sms, broadcast_alert
@@ -213,8 +216,13 @@ async def create_report(payload: ReportCreate, db: Session = Depends(get_db)):
             report_data["community_id"] = str(payload.community_id) if payload.community_id else None
             result = memory_db.add_report(report_data)
 
-        logger.info("Report created: %s type=%s severity=%s confidence=%.2f",
-                     result.get("id"), classification["report_type"], classification["severity"], classification["confidence"])
+        logger.info(
+            "Report created: %s type=%s severity=%s confidence=%.2f",
+            result.get("id"),
+            classification["report_type"],
+            classification["severity"],
+            classification["confidence"],
+        )
 
         if classification["severity"] in ("high", "critical"):
             try:
@@ -280,7 +288,9 @@ async def get_reports(
             if status:
                 results = [r for r in results if r["status"] == status]
             if region and results:
-                results = [r for r in results if r.get("location_name") and region.lower() in r["location_name"].lower()]
+                results = [
+                    r for r in results if r.get("location_name") and region.lower() in r["location_name"].lower()
+                ]
             results.sort(key=lambda r: r["submitted_at"], reverse=True)
             return results[offset:offset + limit]
     except Exception as e:
@@ -355,14 +365,16 @@ async def create_alert(payload: AlertCreate, db: Session = Depends(get_db)):
 
         communities = []
         if db:
-            query = db.query(Community).filter(Community.is_active == True)
+            query = db.query(Community).filter(Community.is_active.is_(True))
             if payload.region:
                 query = query.filter(Community.region.ilike(f"%{payload.region}%"))
             communities = query.all()
         else:
             communities = list(memory_db.communities.values())
             if payload.region:
-                communities = [c for c in communities if c.get("region") and payload.region.lower() in c["region"].lower()]
+                communities = [
+                    c for c in communities if c.get("region") and payload.region.lower() in c["region"].lower()
+                ]
 
         if communities:
             phone_numbers = []
@@ -389,7 +401,6 @@ async def create_alert(payload: AlertCreate, db: Session = Depends(get_db)):
 @app.post("/api/webhooks/sms", response_model=SMSWebhookResponse)
 async def sms_webhook(payload: SMSWebhookPayload, request: Request):
     try:
-        raw_body = await request.body()
         logger.info("SMS webhook received from %s: %s", payload.from_number, payload.text[:100])
 
         content_type = request.headers.get("content-type", "")
@@ -428,10 +439,18 @@ async def sms_webhook(payload: SMSWebhookPayload, request: Request):
             result = memory_db.add_report(report_data)
             report_id = result["id"]
 
-        confirmation = f"Received! Your report classified as {classification['report_type']} ({classification['severity']}). Thank you for keeping your community safe."
+        confirmation = (
+            f"Received! Your report classified as {classification['report_type']}"
+            f" ({classification['severity']}). Thank you for keeping your community safe."
+        )
         send_sms(payload.from_number, confirmation)
 
-        logger.info("SMS processed: report=%s type=%s severity=%s", report_id, classification["report_type"], classification["severity"])
+        logger.info(
+            "SMS processed: report=%s type=%s severity=%s",
+            report_id,
+            classification["report_type"],
+            classification["severity"],
+        )
 
         return SMSWebhookResponse(
             status="success",
@@ -457,7 +476,9 @@ async def get_stats(db: Session = Depends(get_db)):
             total_communities = db.query(Community).count()
             active_alerts = db.query(Alert).filter(Alert.status == "active").count()
 
-            reports_by_type_rows = db.query(Report.report_type, func.count(Report.id)).group_by(Report.report_type).all()
+            reports_by_type_rows = (
+                db.query(Report.report_type, func.count(Report.id)).group_by(Report.report_type).all()
+            )
             reports_by_severity_rows = db.query(Report.severity, func.count(Report.id)).group_by(Report.severity).all()
 
             recent = db.query(Report).order_by(Report.submitted_at.desc()).limit(5).all()
@@ -468,6 +489,7 @@ async def get_stats(db: Session = Depends(get_db)):
             active_alerts = len([a for a in memory_db.alerts.values() if a.get("status") == "active"])
 
             from collections import Counter
+
             type_counter = Counter(r["report_type"] for r in memory_db.reports.values())
             severity_counter = Counter(r["severity"] for r in memory_db.reports.values())
             reports_by_type_rows = [(k, v) for k, v in type_counter.items()]
@@ -550,11 +572,15 @@ async def sync_icpac(db: Session = Depends(get_db)):
         created = 0
         for item in alerts_data:
             if db:
-                existing = db.query(Alert).filter(
-                    Alert.title == item["title"],
-                    Alert.region == item["region"],
-                    Alert.status == "active",
-                ).first()
+                existing = (
+                    db.query(Alert)
+                    .filter(
+                        Alert.title == item["title"],
+                        Alert.region == item["region"],
+                        Alert.status == "active",
+                    )
+                    .first()
+                )
                 if existing:
                     continue
                 alert = Alert(
@@ -584,6 +610,7 @@ async def sync_icpac(db: Session = Depends(get_db)):
 
 FRONTEND_DIR = Path(__file__).resolve().parent.parent.parent / "frontend"
 if FRONTEND_DIR.exists() and (FRONTEND_DIR / "index.html").exists():
+
     @app.get("/")
     async def serve_frontend():
         return FileResponse(str(FRONTEND_DIR / "index.html"))

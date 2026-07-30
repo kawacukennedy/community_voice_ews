@@ -32,7 +32,7 @@ jobs:
       - name: Run linting
         run: |
           pip install flake8 black
-          flake8 app/ --max-line-length=120 --exclude=__pycache__
+          flake8 app/ --max-line-length=120 --extend-ignore=E203 --exclude=__pycache__
           black --check app/ --line-length=120
 
       - name: Run tests

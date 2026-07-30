@@ -1,5 +1,4 @@
 import logging
-from typing import Optional
 from app.utils.config import get_settings
 
 logger = logging.getLogger(__name__)
@@ -21,16 +20,9 @@ def _send_africas_talking(to_phone: str, message: str) -> dict:
     try:
         import africastalking
 
-        africastalking.initialize(
-            username=settings.sms_username or "sandbox",
-            api_key=settings.sms_api_key or ""
-        )
+        africastalking.initialize(username=settings.sms_username or "sandbox", api_key=settings.sms_api_key or "")
         sms = africastalking.SMS
-        response = sms.send(
-            message=message,
-            recipients=[to_phone],
-            sender_id=settings.sms_sender_id or None
-        )
+        response = sms.send(message=message, recipients=[to_phone], sender_id=settings.sms_sender_id or None)
         logger.info("Africa's Talking SMS sent to %s: %s", to_phone, response)
         return {"status": "sent", "provider": "africas_talking", "response": response}
     except ImportError:
@@ -50,11 +42,7 @@ def _send_twilio(to_phone: str, message: str) -> dict:
             return {"status": "simulated", "provider": "twilio", "to": to_phone, "message": message}
 
         client = Client(settings.twilio_account_sid, settings.twilio_auth_token)
-        twilio_msg = client.messages.create(
-            body=message,
-            from_=settings.twilio_phone_number,
-            to=to_phone
-        )
+        twilio_msg = client.messages.create(body=message, from_=settings.twilio_phone_number, to=to_phone)
         logger.info("Twilio SMS sent to %s: SID=%s", to_phone, twilio_msg.sid)
         return {"status": "sent", "provider": "twilio", "sid": twilio_msg.sid}
     except ImportError:
@@ -68,11 +56,7 @@ def _send_twilio(to_phone: str, message: str) -> dict:
 def format_alert_sms(alert_title: str, alert_message: str, severity: str) -> str:
     severity_emoji = {"low": "ℹ️", "moderate": "⚠️", "high": "🔴", "critical": "🚨"}
     emoji = severity_emoji.get(severity, "⚠️")
-    parts = [
-        f"{emoji} ALERT: {alert_title}",
-        alert_message[:280],
-        "Reply to this SMS to report what you see."
-    ]
+    parts = [f"{emoji} ALERT: {alert_title}", alert_message[:280], "Reply to this SMS to report what you see."]
     return "\n".join(parts)
 
 

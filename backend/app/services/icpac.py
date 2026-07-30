@@ -1,7 +1,7 @@
 import httpx
 import logging
-from typing import Optional, List, Dict
-from datetime import datetime, timezone, timedelta
+from typing import List, Dict
+from datetime import datetime, timezone
 from app.utils.config import get_settings
 
 logger = logging.getLogger(__name__)
@@ -9,10 +9,10 @@ logger = logging.getLogger(__name__)
 settings = get_settings()
 
 ICPAC_ENDPOINTS = {
-    "flood_forecast": "https://maps.icpac.net/geoserver/icpac/ows?service=WFS&version=1.0.0&request=GetFeature&typeName=icpac:flood_hazard&outputFormat=application/json",
-    "drought_forecast": "https://maps.icpac.net/geoserver/icpac/ows?service=WFS&version=1.0.0&request=GetFeature&typeName=icpac:drought_hazard&outputFormat=application/json",
-    "rainfall": "https://maps.icpac.net/geoserver/icpac/ows?service=WFS&version=1.0.0&request=GetFeature&typeName=icpac:rainfall_anomaly&outputFormat=application/json",
-    "hazards": "https://maps.icpac.net/geoserver/icpac/ows?service=WFS&version=1.0.0&request=GetFeature&typeName=icpac:multi_hazard&outputFormat=application/json",
+    "flood_forecast": "https://maps.icpac.net/geoserver/icpac/ows?service=WFS&version=1.0.0&request=GetFeature&typeName=icpac:flood_hazard&outputFormat=application/json",  # noqa: E501
+    "drought_forecast": "https://maps.icpac.net/geoserver/icpac/ows?service=WFS&version=1.0.0&request=GetFeature&typeName=icpac:drought_hazard&outputFormat=application/json",  # noqa: E501
+    "rainfall": "https://maps.icpac.net/geoserver/icpac/ows?service=WFS&version=1.0.0&request=GetFeature&typeName=icpac:rainfall_anomaly&outputFormat=application/json",  # noqa: E501
+    "hazards": "https://maps.icpac.net/geoserver/icpac/ows?service=WFS&version=1.0.0&request=GetFeature&typeName=icpac:multi_hazard&outputFormat=application/json",  # noqa: E501
 }
 
 
@@ -70,7 +70,18 @@ def _parse_icpac_feature(feature: Dict, source: str) -> Dict:
 
     hazard_type = source.split("_")[0] if "_" in source else "general"
     severity_raw = (props.get("hazard_class") or props.get("severity") or props.get("risk_level") or "moderate").lower()
-    severity_map = {"1": "low", "2": "moderate", "3": "high", "4": "critical", "very low": "low", "low": "low", "moderate": "moderate", "high": "high", "very high": "critical", "extreme": "critical"}
+    severity_map = {
+        "1": "low",
+        "2": "moderate",
+        "3": "high",
+        "4": "critical",
+        "very low": "low",
+        "low": "low",
+        "moderate": "moderate",
+        "high": "high",
+        "very high": "critical",
+        "extreme": "critical",
+    }
     severity = severity_map.get(severity_raw, "moderate")
 
     return {
@@ -78,12 +89,16 @@ def _parse_icpac_feature(feature: Dict, source: str) -> Dict:
         "alert_type": hazard_type,
         "severity": severity,
         "title": props.get("name") or props.get("title") or f"{hazard_type.capitalize()} Warning",
-        "description": props.get("description") or props.get("abstract") or f"{hazard_type.capitalize()} hazard detected in the region",
+        "description": (
+            props.get("description")
+            or props.get("abstract")
+            or f"{hazard_type.capitalize()} hazard detected in the region"
+        ),
         "region": props.get("admin_name") or props.get("region") or props.get("country") or "Unknown",
         "latitude": center["latitude"] if center else None,
         "longitude": center["longitude"] if center else None,
         "issued_at": props.get("date") or props.get("issued") or datetime.now(timezone.utc).isoformat(),
-        "raw_data": dict(list(props.items())[:10])
+        "raw_data": dict(list(props.items())[:10]),
     }
 
 
