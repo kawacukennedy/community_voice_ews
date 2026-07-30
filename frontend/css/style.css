@@ -708,6 +708,7 @@ body {
   align-items: center;
   gap: 6px;
   margin-bottom: 4px;
+  color: var(--color-text-primary);
 }
 
 .map-legend-item:last-child {
@@ -719,6 +720,15 @@ body {
   height: 10px;
   border-radius: 50%;
   flex-shrink: 0;
+}
+
+.leaflet-control-attribution {
+  color: var(--color-text-primary) !important;
+}
+
+.leaflet-control-attribution a {
+  color: var(--color-text-primary) !important;
+}
 }
 
 /* ============================================================
