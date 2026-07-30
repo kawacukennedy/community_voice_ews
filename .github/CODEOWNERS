@@ -1,0 +1,16 @@
+# Default owner for all files
+* @kawacukennedy
+
+# Backend
+/backend/ @kawacukennedy
+
+# Frontend
+/frontend/ @kawacukennedy
+
+# CI/CD
+/.github/ @kawacukennedy
+
+# Documentation
+/docs/ @kawacukennedy
+/README.md @kawacukennedy
+/CONTRIBUTING.md @kawacukennedy
