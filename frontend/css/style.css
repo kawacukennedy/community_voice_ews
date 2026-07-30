@@ -701,6 +701,7 @@ body {
   font-size: 11px;
   box-shadow: var(--shadow-sm);
   border: 1px solid rgba(0, 0, 0, 0.06);
+  color: #1C1C1E;
 }
 
 .map-legend-item {
@@ -722,12 +723,12 @@ body {
   flex-shrink: 0;
 }
 
-.leaflet-control-attribution {
-  color: var(--color-text-primary) !important;
+.leaflet-container .leaflet-control-attribution {
+  color: #1C1C1E !important;
 }
 
-.leaflet-control-attribution a {
-  color: var(--color-text-primary) !important;
+.leaflet-container .leaflet-control-attribution a {
+  color: #1C1C1E !important;
 }
 }
 
