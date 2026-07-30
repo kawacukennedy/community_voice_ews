@@ -4,6 +4,7 @@ const API = (() => {
       return 'http://localhost:8000';
     }
     return 'https://community-voice-ews-api.onrender.com';
+
   })();
 
   const MAX_RETRIES = 2;

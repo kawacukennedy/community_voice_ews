@@ -1,6 +1,15 @@
 # Community Voice Early Warning System
 
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
+[![Python](https://img.shields.io/badge/Python-3.12-blue)](https://python.org)
+[![FastAPI](https://img.shields.io/badge/FastAPI-0.115-green)](https://fastapi.tiangolo.com)
+[![PRs Welcome](https://img.shields.io/badge/PRs-welcome-brightgreen)](CONTRIBUTING.md)
+
 A two-way early warning platform for the IGAD region that combines official forecasts from ICPAC with crowdsourced SMS reports from local communities. Built for the IGAD Hackathon 2026.
+
+🌐 **Live Demo**: [https://community-voice-ews.vercel.app](https://community-voice-ews.vercel.app)
+📖 **API Docs**: [https://community-voice-ews-api.onrender.com/docs](https://community-voice-ews-api.onrender.com/docs)
+📂 **Source**: [github.com/kawacukennedy/community_voice_ews](https://github.com/kawacukennedy/community_voice_ews)
 
 ## Problem
 
@@ -55,8 +64,8 @@ In East Africa, communities face increasing climate disasters — floods, drough
 ### 1. Clone & Setup
 
 ```bash
-git clone https://github.com/YOUR_USERNAME/community-voice-ews.git
-cd community-voice-ews
+git clone https://github.com/kawacukennedy/community_voice_ews.git
+cd community_voice_ews
 cp .env.example .env
 ```
 
@@ -148,7 +157,7 @@ python -m pytest tests/ -v
 ## Project Structure
 
 ```
-community-voice-ews/
+community_voice_ews/
 ├── backend/
 │   ├── app/
 │   │   ├── main.py              # FastAPI app with all endpoints
@@ -188,4 +197,8 @@ community-voice-ews/
 
 ## License
 
-MIT — free and open source for all.
+MIT — free and open source for all. See [LICENSE](LICENSE) for details.
+
+---
+
+Built with ❤️ for the IGAD Hackathon 2026 by **kawacukennedy**.
