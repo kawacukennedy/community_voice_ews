@@ -8,11 +8,8 @@ env/
 *.egg
 
 # Environment
-.env
-.env.local
 
 # IDE
-.vscode/
 .idea/
 *.swp
 *.swo
@@ -30,3 +27,4 @@ backend/**/__pycache__/
 
 # Node
 node_modules/
+config.bat
