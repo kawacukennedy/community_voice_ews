@@ -1,23 +1,23 @@
 const SMS_TEMPLATES = {
   flood: {
     phone: '+254712345678',
-    message: 'Heavy rains have caused flooding in our village. Water is entering homes near the river. We need assistance.',
+    message: 'Maji yamefurika katika kijiji chetu. Maji yameingia nyumbani karibu na mto. Tunahitaji msaada.',
   },
   drought: {
     phone: '+254723456789',
-    message: 'No rain for 3 months. Crops are dying and livestock have no water. Our community is facing severe drought.',
+    message: 'Hakuna mvua kwa miezi mitatu. Mazao yanakauka na mifugo haina maji. Jumuiya yetu inakabiliwa na ukame mkali.',
   },
   pest: {
     phone: '+254734567890',
-    message: 'Locusts have invaded our farms. They are eating all the crops. We need help to control the infestation.',
+    message: 'Nzige wamevamia mashamba yetu. Wanakula mazao yote. Tunahitaji msaada wa kudhibiti wadudu hawa.',
   },
   disease: {
     phone: '+254745678901',
-    message: 'Many people in our village are sick with fever and diarrhea. We think it might be cholera. Need medical help.',
+    message: 'Watu wengi katika kijiji chetu ni wagonjwa wa homa na kuhara. Tunafikiri ni kipindupindu. Tunahitaji msaada wa matibabu.',
   },
   fire: {
     phone: '+254756789012',
-    message: 'A fire is spreading through the bush near our village. The wind is strong and it is moving towards homes.',
+    message: 'Moto unaenea karibu na kijiji chetu. Upepo ni mkali na moto unaelekea kwenye nyumba. Tunahitaji msaada wa haraka.',
   },
 };
 
