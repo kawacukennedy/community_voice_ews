@@ -1,6 +1,6 @@
 fastapi>=0.141.1
-uvicorn[standard]>=0.53.0
-sqlalchemy>=2.0.54
+uvicorn[standard]>=0.54.0
+sqlalchemy>=2.1.1
 pydantic>=2.13.5
 pydantic-settings>=2.15.0
 httpx>=0.28.1
@@ -10,4 +10,4 @@ africastalking
 twilio
 pytest>=9.1.1
 pytest-asyncio>=1.4.0
-flake8>=7.3.0
+flake8>=7.4.1
