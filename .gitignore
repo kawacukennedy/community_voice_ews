@@ -8,8 +8,12 @@ env/
 *.egg
 
 # Environment
+.env
+.env.*
+!.env.example
 
 # IDE
+.vscode/
 .idea/
 *.swp
 *.swo
